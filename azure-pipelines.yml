@@ -17,11 +17,12 @@ steps:
   inputs:
     version: '$(dotnetSdkVersion)'
 
+
 - task: UseDotNet@2
   displayName: 'Use .NET Core SDK 2.1.505 for SonarCloud'
   inputs:
     version: '2.1.505'
-
+    
 - task: Npm@1
   displayName: 'Run npm install'
   inputs:
@@ -43,6 +44,7 @@ steps:
     command: 'restore'
     projects: '**/*.csproj'
 
+
 - task: SonarCloudPrepare@1
   displayName: 'Prepare SonarCloud analysis'
   inputs:
@@ -62,6 +64,7 @@ steps:
       eq(variables['System.PullRequest.TargetBranch'], 'master')
     )
 
+
 - task: DotNetCoreCLI@2
   displayName: 'Build the project - $(buildConfiguration)'
   inputs:
@@ -70,6 +73,18 @@ steps:
     projects: '**/*.csproj'
 
 - task: DotNetCoreCLI@2
+
+  displayName: 'Publish the project - $(buildConfiguration)'
+  inputs:
+    command: 'publish'
+    projects: '**/*.csproj'
+    publishWebProjects: false
+    arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
+    zipAfterPublish: true
+
+- task: WhiteSource Bolt@20
+  displayName: 'Run WhiteSource Bolt'
+
   displayName: 'Install ReportGenerator'
   inputs:
     command: custom
@@ -100,6 +115,7 @@ steps:
  
 - task: SonarCloudPublish@1
   displayName: 'Publish SonarCloud quality gate results'
+
   condition: |
     and
     (
@@ -107,6 +123,8 @@ steps:
       eq(variables['Build.Reason'], 'PullRequest'),
       eq(variables['System.PullRequest.TargetBranch'], 'master')
     )
+
+
 
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish code coverage report'
@@ -122,6 +140,7 @@ steps:
     publishWebProjects: false
     arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
     zipAfterPublish: true
+
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop'
